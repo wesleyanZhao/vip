@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lanou.cn.mapper.CpnMapper">
+    <!--添加代金券-->
+    <insert id="addCpn" >
+        INSERT INTO cpn_info(
+        cpn_no
+        ,cpn_type_no
+        ,tp_cd
+        ,cpn_sum
+        ,cpn_limit
+        ,cpn_content
+        ,active_date
+        ,expire_date
+        ,is_used
+        ,inst_date
+        ,inst_id
+        )
+        VALUES (
+        ( select * from (select concat(#{params.cpnTypeNo},IFNULL(max(id),0) + 1 ) from cpn_info )  a )
+        ,#{params.cpnTypeNo}
+        ,#{params.tpCd}
+        ,#{params.cpnSum}
+        ,#{params.cpnLimit}
+        ,#{params.cpnContent}
+        ,#{params.activeDate}
+        ,#{params.expireDate}
+        ,#{params.isUsed}
+        ,now()
+        ,#{params.instId}
+        )
+    </insert>
+    <!--管理员查询代金券本身分页-->
+    <select id="findCpn" resultType="java.util.HashMap">
+        select
+        c.id id
+        ,c.cpn_no cpnNo
+        ,cpn_limit cpnLimit
+        ,ct.cpn_name cpnName
+        ,c.tp_cd tpCd
+        ,c.cpn_sum cpnSum
+        ,c.cpn_limit cpnLimit
+        ,c.cpn_content cpnContent
+        ,c.active_date activeDate
+        ,c.expire_date expireDate
+        ,c.is_used isUsed
+        from
+        cpn_info c,
+        cpn_type ct
+        WHERE c.cpn_type_no = ct.cpn_type_no
+        <if test="null != params.cpnTpyeNo and '' != params.cpnTpyeNo">
+            AND c.cpn_type_no = #{params.cpnTpyeNo}
+        </if>
+        <if test="null != params.cpnSum and '' != params.cpnSum">
+            AND c.cpn_sum =#{params.cpnSum}
+        </if>
+        <if test="null != params.cpnContent and '' != params.cpnContent">
+            AND c.cpn_content like CONCAT('%',#{params.cpnContent},'%')
+        </if>
+        /*日期*/
+        <if test="null != params.activeDate and '' != params.activeDate and null != params.expireDate and '' != params.expireDate">
+            AND (
+            (<![CDATA[c.expire_date >= #{params.expireDate}]]>
+            AND <![CDATA[c.active_date <= #{params.activeDate}]]>)
+
+            or (<![CDATA[c.expire_date <= #{params.expireDate}]]>
+            AND <![CDATA[c.expire_date >= #{params.activeDate}]]>)
+
+            OR (<![CDATA[c.expire_date >= #{params.expireDate}]]>
+            AND <![CDATA[c.active_date >= #{params.activeDate}]]>)
+
+            )
+
+            AND <![CDATA[#{params.activeDate} <= #{params.expireDate}]]>
+        </if>
+
+        <if test="null !=params.isUsed and '' != params.isUsed">
+            AND c.is_used=#{params.isUsed}
+        </if>
+        order by id asc
+    </select>
+
+    <!--查询商品的代金券-->
+    <select id="findCpnInfo" resultType="java.util.HashMap">
+        select
+        c.id id
+        ,c.cpn_no cpnNo
+        ,ct.cpn_name cpnName
+        ,c.tp_cd tpCd
+        ,c.cpn_sum cpnSum
+        ,c.cpn_limit cpnLimit
+        ,c.cpn_content cpnContent
+        ,c.active_date activeDate
+        ,c.expire_date expireDate
+        ,c.is_used isUsed
+        from
+        cpn_info c,
+        cpn_type ct
+        WHERE c.cpn_type_no = ct.cpn_type_no
+        /*返回该类型下 用户没有领取的代金券*/
+        <if test="null !=params.vipNo and '' != params.vipNo">
+            AND
+            c.cpn_no not in (select vcr.cpn_no from vip_cpn_r vcr where vcr.vip_no = #{params.vipNo} and vcr.is_used = 'y')
+        </if>
+
+        <if test="null !=params.vipNoHave and '' != params.vipNoHave">
+            AND
+            c.cpn_no  in (select vcr.cpn_no from vip_cpn_r vcr where vcr.vip_no = #{params.vipNoHave} and vcr.is_used = 'y')
+             AND
+            <![CDATA[c.active_date<=now()]]>
+
+        </if>
+        AND c.is_used = 'y'
+
+        AND <![CDATA[c.expire_date >= now()]]>
+
+        <if test="null !=params.cpnTypeNo and '' != params.cpnTypeNo">
+            AND   c.cpn_type_no = #{params.cpnTypeNo}
+        </if>
+
+        <if test="null !=params.tpCd and '' != params.tpCd">
+            AND   c.tp_cd = #{params.tpCd}
+        </if>
+        order by id asc
+    </select>
+</mapper>

@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lanou.cn.mapper.VipMapper">
+
+    <insert id="addVip" parameterType="Map">
+        <selectKey resultType="Integer" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID() as id
+        </selectKey>
+        insert into vip_info(
+        vip_no
+        ,vip_account
+        ,vip_password
+        ,vip_type
+        ,id_card
+        ,real_name
+        ,reg_date
+        ,acc_point
+        ,acc_sum
+        ,vip_level
+        ,email
+        ,phone_no_1
+        ,phone_no_2
+        ,vip_birthday
+        ,is_used
+        )
+        VALUES(
+        (select a.id from (select concat(#{vipType},IFNULL(max(id),0) + 1 ) id from vip_info) a)
+        ,#{vipAccount}
+        ,#{vipPassword}
+        ,#{vipType}
+        ,#{idCard}
+        ,#{realName}
+        ,now()
+        ,0
+        ,0
+        ,1
+        ,#{email}
+        ,#{phoneOne}
+        ,#{phoneTwo}
+        ,#{vipBirthday}
+        ,#{isUsed}
+        )
+    </insert>
+
+    <select id="findProvince" resultType="java.util.HashMap">
+        SELECT
+        provinceID provinceId
+        ,province
+        FROM
+        province
+    </select>
+
+    <insert id="addAddress" >
+        insert into
+        vip_add_info(
+        vip_no
+        ,province_id
+        ,city_id
+        ,addr_info
+        ,is_used
+        ,addr_state
+        ,inst_date
+        ,inst_id
+        )
+        values(
+        (select vip_no from vip_info where id=#{params.id})
+        ,#{params.provinceId}
+        ,#{params.cityId}
+        ,#{params.addrInfo}
+        ,#{params.isUsed}
+        ,0
+        ,now()
+        ,(select id from vip_info where vip_account=#{params.vipAccount})
+        )
+    </insert>
+
+    <insert id="addBank">
+        insert into
+        bank_info(
+        vip_no
+        ,bank_card_no
+        ,bank_name
+        ,bank_card_type
+        )
+        VALUES (
+        (select vip_no from vip_info where id=#{params.id})
+        ,#{params.bankCardNo}
+        ,#{params.bankName}
+        ,#{params.bankCardType}
+        )
+    </insert>
+
+    <select id="loginFrom" resultType="java.util.HashMap">
+        select
+        vip_account
+        ,vip_password
+        ,id
+        ,vip_no
+        from
+        vip_info
+        where
+        vip_account=#{params.vipAccount}
+        and
+        vip_password=#{params.vipPassword}
+    </select>
+
+    <select id="findAddress" resultType="java.util.HashMap">
+        select
+        vai.addr_info addrInfo
+        ,vi.vip_account vipAccount
+        ,vi.email
+        ,vi.phone_no_1 phoneNo1
+        ,vi.phone_no_2 phoneNo2
+        ,vi.vip_no vipNo
+        ,vi.id
+        from
+        vip_add_info vai
+        ,vip_info vi
+        where
+        vai.vip_no=vi.vip_no
+        and
+        vi.id=#{id}
+        and
+        addr_state='0'
+    </select>
+
+    <select id="findBank" resultType="java.util.HashMap">
+        select
+        vi.vip_no vipNo
+        ,vi.vip_account vipAccount
+        ,vi.id
+        ,bi.bank_card_no bankCardNo
+        ,bi.bank_name bankName
+        ,bi.bank_card_type bankCardType
+        from
+        vip_info vi
+        ,bank_info bi
+        where
+        vi.vip_no=bi.vip_no
+        and
+        vi.id=#{id}
+    </select>
+
+    <select id="findVipInfo" resultType="java.util.HashMap">
+        select
+        a.id
+        ,a.vip_birthday vipBirthday
+        ,a.vip_no vipNo
+        ,a.vip_account vipAccount
+        ,a.vip_type vipType
+        ,a.id_card idCard
+        ,a.real_name realName
+        ,a.reg_date regDate
+        ,a.vip_level vipLevel
+        ,a.email
+        ,a.phone_no_1 firstPhoneNo
+        ,a.phone_no_2 secondPhoneNo
+        ,b.id addId
+        ,b.province_id provinceId
+        ,b.city_id cityId
+        ,b.addr_info addrInfo
+        ,c.province
+        ,d.city
+        ,a.monetary monetary
+        from
+        vip_info a
+        ,vip_add_info b
+        ,province c
+        ,city d
+        where
+        a.vip_no=b.vip_no
+        AND
+        b.province_id=c.provinceID
+        AND
+        b.city_id=d.cityID
+        AND
+        b.addr_state=0
+
+        <if test="null != params.id and '' != params.id">
+            and a.id = #{params.id}
+        </if>
+        <if test="null != params.vipNo and '' != params.vipNo">
+            and a.vip_no = #{params.vipNo}
+        </if>
+        <if test="null != params.vipAccount and '' != params.vipAccount">
+            and a.vip_account = #{params.vipAccount}
+        </if>
+        <if test="null != params.vipType and '' != params.vipType and '000'.toString() != params.vipType">
+            and a.vip_type = #{params.vipType}
+        </if>
+        <if test="null != params.idCard and '' != params.idCard">
+            and a.id_card = #{params.idCard}
+        </if>
+        <if test="null != params.realName and '' != params.realName">
+            and a.real_name = #{params.realName}
+        </if>
+        <if test="null != params.startRegDate and '' != params.startRegDate">
+            and <![CDATA[#{params.startRegDate}<a.reg_date]]>
+        </if>
+        <if test="null != params.lastRegDate and '' != params.lastRegDate">
+            and <![CDATA[#{params.lastRegDate}>a.reg_date]]>
+        </if>
+        <if test="null != params.vipLevel and '' != params.vipLevel and '0'.toString() != params.vipLevel">
+            and a.vip_level = #{params.vipLevel}
+        </if>
+        <if test="null != params.email and '' != params.email">
+            and a.email = #{params.email}
+        </if>
+        <if test="null != params.firstPhoneNo and '' != params.firstPhoneNo">
+            and a.phone_no_1 = #{params.firstPhoneNo}
+        </if>
+        <if test="null != params.secondPhoneNo and '' != params.secondPhoneNo">
+            and a.phone_no_2 = #{params.secondPhoneNo}
+        </if>
+        <if test="null != params.provinceId and '' != params.provinceId and '0'.toString() != params.provinceId" >
+            and b.province_id = #{params.provinceId}
+        </if>
+        <if test="null != params.cityId and '' != params.cityId and '0'.toString() != params.cityId">
+            and b.city_id = #{params.cityId}
+        </if>
+    </select>
+
+
+    <select id="findCity" resultType="java.util.HashMap">
+    SELECT
+    city
+    ,cityID cityId
+        FROM
+        city
+        where 1=1
+        <if test="null != provinceId and 0 != provinceId">
+            AND fatherID=#{provinceId}
+        </if>
+    </select>
+
+
+    <update id="updateVipInfo">
+        UPDATE
+        vip_info
+        SET
+        id = #{params.id}
+        <if test="null != params.email and '' != params.email">
+          ,email=#{params.email}
+        </if>
+        <if test="null != params.firstPhoneNo and '' != params.firstPhoneNo">
+          ,phone_no_1=#{params.firstPhoneNo}
+        </if>
+        <if test="null != params.secondPhoneNo and '' != params.secondPhoneNo">
+          ,phone_no_2=#{params.secondPhoneNo}
+        </if>
+        <if test="null != params.vipType and '' != params.vipType">
+            ,vip_type=#{params.vipType}
+        </if>
+        <if test="null != params.vipLevel and '' != params.vipLevel">
+            ,vip_level=#{params.vipLevel}
+        </if>
+        <if test="null != params.idCard and '' != params.idCard">
+          ,id_card=#{params.idCard}
+        </if>
+        <if test="null != params.realName and '' != params.realName">
+          ,real_name=#{params.realName}
+        </if>
+        <if test="null != params.vipBirthday and '' != params.vipBirthday">
+          ,vip_birthday=#{params.vipBirthday}
+        </if>
+        <if test="null != params.isUsed and '' != params.isUsed">
+            ,is_used=#{params.isUsed}
+        </if>
+        <if test="null != params.payNum and '' != params.payNum">
+            ,monetary=monetary+#{params.payNum}
+        </if>
+        WHERE
+        id=#{params.id}
+    </update>
+
+    <select id="showSite" resultType="java.util.HashMap">
+        SELECT
+        a.id siteId
+        ,a.addr_state addState
+        ,a.province_id provinceId
+        ,a.city_id cityId
+        ,a.addr_info addrInfo
+        ,b.province
+        ,c.city
+        FROM
+        vip_add_info a
+        ,province b
+        ,city c
+        WHERE
+        a.vip_no=#{params.vipNo}
+        AND
+        a.province_id=b.provinceID
+        AND
+        a.city_id=c.cityID
+        <if test="null != params.vipAddressId and '' != params.vipAddressId">
+            and a.id = #{params.vipAddressId}
+        </if>
+    </select>
+
+    <update id="updateSite">
+        UPDATE
+        vip_add_info
+        SET
+        province_id=#{params.provinceId}
+        ,city_id=#{params.cityId}
+        ,addr_info=#{params.addrInfo}
+        WHERE
+        id=#{params.addId}
+    </update>
+
+    <update id="useCard">
+        UPDATE
+        card_info
+        SET
+        is_used = 'n'
+        where id = #{params.cardId}
+    </update>
+
+    <update id="addMoney">
+        UPDATE
+        vip_info vi
+        SET
+        vi.acc_sum = (SELECT ci.card_sum FROM card_info ci where ci.id = #{params.cardId}) + vi.acc_sum
+        WHERE
+        vi.id = #{params.id}
+    </update>
+
+    <insert id="addCardRecord">
+        INSERT INTO vip_card_use
+        (
+        id
+        ,vip_no
+        <if test="null != params.cardNo and '' != params.cardNo">
+            ,card_no
+        </if>
+        ,use_date
+        ,use_state
+        ,pay_money
+        <if test="null != params.ordNo and '' != params.ordNo">
+            ,ord_no
+        </if>
+        )
+        VALUES
+        (0
+        ,#{params.vipNo}
+        <if test="null != params.cardNo and '' != params.cardNo">,#{params.cardNo}
+        </if>
+        ,now()
+        ,#{params.useState}
+        ,#{params.payMoney}
+        <if test="null != params.ordNo and '' != params.ordNo">
+            ,#{params.ordNo}
+        </if>
+        )
+    </insert>
+
+    <select id="vipUpgrade" resultType="java.util.HashMap">
+        SELECT
+        monetary
+        FROM
+        vip_info
+        WHERE
+        id = #{params.id}
+    </select>
+
+    <update id="UpdateVipLevel" parameterType="Map">
+        UPDATE
+        vip_info
+        SET
+        vip_level=vip_level-1
+        WHERE
+        is_used='y'
+        AND vip_level >1
+        <if test="null != params.vipNo and '' != params.vipNo">
+            and vip_no = #{params.vipNo}
+        </if>
+    </update>
+
+
+    <update id="pullTheBlack" parameterType="Map">
+        UPDATE
+        vip_info
+        SET
+        is_used='n'
+        WHERE 1=1
+        <if test="null != params.vipNo and '' != params.vipNo">
+            and vip_no = #{params.vipNo}
+        </if>
+    </update>
+
+
+    <!--查找返还积分-->
+    <select id="findReturnIn" resultType="java.util.HashMap">
+        SELECT
+        point_num AS pointNum
+        FROM
+        integral_record
+        WHERE
+        point_state='r'
+        <if test="null != params.ordNo and '' != params.ordNo">
+            AND ord_no=#{params.ordNo}
+        </if>
+    </select>
+</mapper>

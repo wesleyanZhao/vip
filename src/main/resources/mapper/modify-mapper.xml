@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE mapper  
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.lanou.cn.mapper.ModifyMapper">
+
+    <!--查询所有信息 管理员控制-->
+    <select id="findAllInfo" resultType="java.util.HashMap">
+        select
+         vi.id
+        ,vi.vip_no vipNo
+        ,vi.acc_point accPoint
+        ,vi.acc_sum accSum
+--         ,vcr.cpn_no cpnNo
+--         ,ci.cpn_sum cpnSum
+--         ,ci.cpn_content cpnContent
+        ,bi.bank_card_no bankCardNo
+        ,bi.bank_name bankName
+        ,bi.bank_card_type bankCardType
+
+        from vip_info vi
+
+        left join
+          bank_info bi on vi.vip_no = bi.vip_no
+        where 1 = 1
+        <if test="null != params.vipNo and '' != params.vipNo">
+            and vi.vip_no = #{params.vipNo}
+        </if>
+
+        <if test="null != params.startAccPoint and '' != params.startAccPoint">
+            AND <![CDATA[#{params.startAccPoint}>vi.acc_point]]>
+        </if>
+        <if test="null != params.lastAccPoint and '' != params.lastAccPoint">
+            AND <![CDATA[#{params.lastAccPoint}<vi.acc_point]]>
+        </if>
+
+
+
+        <if test="null != params.startAccSum and '' != params.startAccSum">
+            AND <![CDATA[#{params.startAccSum}>vi.acc_sum]]>
+        </if>
+        <if test="null != params.lastAccSum and '' != params.lastAccSum">
+            AND <![CDATA[#{params.lastAccSum}<vi.acc_sum]]>
+        </if>
+
+        <!--<if test="null != params.cpnNo and '' != params.cpnNo">-->
+            <!--and vcr.cpn_no = #{params.cpnNo}-->
+        <!--</if>-->
+
+        <!--<if test="null != params.cpnSum and '' != params.cpnSum">-->
+            <!--and ci.cpn_sum = #{params.cpnSum}-->
+        <!--</if>-->
+
+        <!--<if test="null != params.cpnContent and '' != params.cpnContent">-->
+            <!--and ci.cpn_content = #{params.cpnContent}-->
+        <!--</if>-->
+
+        <if test="null != params.bankCardNo and '' != params.bankCardNo">
+            and bi.bank_card_no = #{params.bankCardNo}
+        </if>
+
+        <if test="null != params.bankName and '' != params.bankName">
+            and bi.bank_name = #{params.bankName}
+        </if>
+
+        <if test="null != params.bankCardType and '' != params.bankCardType">
+            and bi.bank_card_type = #{params.bankCardType}
+        </if>
+
+    </select>
+
+    <!--查询积分记录 -->
+    <select id="findIntegral" resultType="java.util.HashMap">
+        select
+         id
+        ,vip_no vipNo
+        ,point_num pointNum
+        ,rcd_date rcdDate
+        ,ord_no ordNo
+        ,point_state pointState
+        from
+        integral_record
+        where
+        1 = 1
+        <if test="null != params.id and '' != params.id">
+            and id = #{params.id}
+        </if>
+
+        <if test="null != params.vipNo and '' != params.vipNo">
+            and vip_no = #{params.vipNo}
+        </if>
+
+        <if test="null != params.pointNum and '' != params.pointNum">
+            and point_num = #{params.pointNum}
+        </if>
+
+        <if test="null != params.rcdDate and '' != params.rcdDate">
+            and rcd_date = #{params.rcdDate}
+        </if>
+
+        <if test="null != params.orderNo and '' != params.orderNo">
+            and order_no = #{params.orderNo}
+        </if>
+
+        <if test="null != params.pointState and '' != params.pointState">
+            and point_state = #{params.pointState}
+        </if>
+    </select>
+
+    <!--查询代金券-->
+    <select id="findCoupon" resultType="java.util.HashMap">
+        SELECT
+           ci.id
+          ,ci.cpn_no cpnNo
+          ,vcr.vip_no vipNo
+          ,ci.cpn_type_no cpnTypeNo
+          ,ci.cpn_sum cpnSum
+          ,ci.cpn_content cpnContent
+          ,ci.inst_date instDate
+          FROM
+           cpn_info  ci
+          ,vip_cpn_r vcr
+          ,vip_info vi
+          WHERE
+          vi.vip_no = vcr.vip_no
+          AND
+          ci.cpn_no = vcr.cpn_no
+        <if test="null != vipNo and '' != vipNo">
+            and vi.vip_no = #{vipNo}
+        </if>
+
+
+    </select>
+        <!--更新账户积分和余额-->
+    <update id="updateBalance">
+        UPDATE
+        vip_info
+        SET
+        vip_no=#{params.vipNo}
+        <if test="null!=params.accPoint and ''!=params.accPoint">
+            ,acc_point=#{params.accPoint}
+        </if>
+        <if test="null!=params.accSum and ''!=params.accSum">
+            ,acc_sum=#{params.accSum}
+        </if>
+        WHERE
+        vip_no=#{params.vipNo}
+    </update>
+    <!--更新银行卡号-->
+    <update id="updateBankCardNo">
+        UPDATE bank_info
+        SET
+        vip_no=#{params.vipNo}
+        <if test="null!=params.bankCardNo and ''!=params.bankCardNo">
+            ,bank_card_no=#{params.bankCardNo}
+        </if>
+        WHERE
+        vip_no=#{params.vipNo}
+    </update>
+
+
+</mapper>  
